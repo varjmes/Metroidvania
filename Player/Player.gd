@@ -3,20 +3,48 @@ extends KinematicBody2D
 export(int) var ACCELERATION = 512
 export(int) var MAX_SPEED = 64
 export(float) var FRICTION = 0.25
+export(int) var GRAVITY = 200
+export(int) var JUMP_FORCE = 128
+export(int) var MAX_SLOPE_ANGLE = 46
 
 var motion = Vector2.ZERO
 
 func _physics_process(delta):
+	var input_vector = get_input_vector()
+	
+	apply_horizontal_force(input_vector, delta)
+	apply_friction(input_vector, FRICTION)
+	jump_check()
+	apply_gravity(delta)
+	move()
+
+func apply_friction(input_vector, friction):
+	if input_vector.x == 0 and is_on_floor():
+		# lerp: linear interpolation
+		motion.x = lerp(motion.x, 0, friction)
+
+func apply_gravity(delta):
+	# if not is_on_floor():
+		motion.y += GRAVITY * delta
+		motion.y = min(motion.y, JUMP_FORCE)
+
+func apply_horizontal_force(input_vector, delta):
+	if input_vector.x != 0:
+		motion.x += input_vector.x * ACCELERATION * delta
+		motion.x = clamp(motion.x, -MAX_SPEED, MAX_SPEED)
+
+func get_input_vector():
 	var input_vector = Vector2.ZERO
 	input_vector.x = Input.get_action_strength("ui_right") - Input.get_action_strength("ui_left")
-	input_vector.y = Input.get_action_strength("ui_down") - Input.get_action_strength("ui_up")
+	return input_vector
 
-	# If character wants to move (user pressing directional keys)
-	if input_vector != Vector2.ZERO:
-		motion += input_vector * ACCELERATION * delta
-		motion = motion.clamped(MAX_SPEED)
+func jump_check():
+	if is_on_floor():
+		if Input.is_action_just_pressed("ui_up"):
+			motion.y = -JUMP_FORCE
 	else:
-		# We're reducing motion
-		motion = motion.linear_interpolate(Vector2.ZERO, FRICTION)
-	
-	motion = move_and_slide(motion)
+		if Input.is_action_just_released("ui_up") and motion.y < -JUMP_FORCE/2:
+			motion.y = -JUMP_FORCE / 2
+			
+func move():
+	motion = move_and_slide(motion, Vector2.UP)
