@@ -1,5 +1,7 @@
 extends KinematicBody2D
 
+const DustEffect = preload("res://Effects/DustEffect.tscn")
+
 export(int) var ACCELERATION = 512
 export(int) var MAX_SPEED = 64
 export(float) var FRICTION = 0.25
@@ -7,6 +9,7 @@ export(int) var GRAVITY = 200
 export(int) var JUMP_FORCE = 128
 export(int) var MAX_SLOPE_ANGLE = 46
 
+onready var coyoteJumpTimer = $CoyoteJumpTimer
 onready var sprite = $Sprite
 onready var spriteAnimator = $SpriteAnimator
 
@@ -41,13 +44,20 @@ func apply_horizontal_force(input_vector, delta):
 		motion.x += input_vector.x * ACCELERATION * delta
 		motion.x = clamp(motion.x, -MAX_SPEED, MAX_SPEED)
 
+func create_dust_effect():
+	var dust_position = global_position
+	dust_position.x += rand_range(-4, 4)
+	var dustEffect = DustEffect.instance()
+	get_tree().current_scene.add_child(dustEffect)
+	dustEffect.global_position = dust_position
+
 func get_input_vector():
 	var input_vector = Vector2.ZERO
 	input_vector.x = Input.get_action_strength("ui_right") - Input.get_action_strength("ui_left")
 	return input_vector
 
 func jump_check():
-	if is_on_floor():
+	if is_on_floor() or coyoteJumpTimer.time_left > 0:
 		if Input.is_action_just_pressed("ui_up"):
 			motion.y = -JUMP_FORCE
 			just_jumped = true
@@ -71,11 +81,13 @@ func move():
 	# Landing
 	if was_in_air and is_on_floor():
 		motion.x = last_motion.x
+		create_dust_effect()
 	
 	# Just left the ground
 	if was_on_floor and not is_on_floor() and not just_jumped:
 		motion.y = 0
 		position.y = last_position.y
+		coyoteJumpTimer.start()
 
 func update_animations(input_vector):
 	if input_vector.x != 0:
