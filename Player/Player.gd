@@ -7,6 +7,9 @@ export(int) var GRAVITY = 200
 export(int) var JUMP_FORCE = 128
 export(int) var MAX_SLOPE_ANGLE = 46
 
+onready var sprite = $Sprite
+onready var spriteAnimator = $SpriteAnimator
+
 var motion = Vector2.ZERO
 
 func _physics_process(delta):
@@ -16,6 +19,7 @@ func _physics_process(delta):
 	apply_friction(input_vector, FRICTION)
 	jump_check()
 	apply_gravity(delta)
+	update_animations(input_vector)
 	move()
 
 func apply_friction(input_vector, friction):
@@ -45,6 +49,16 @@ func jump_check():
 	else:
 		if Input.is_action_just_released("ui_up") and motion.y < -JUMP_FORCE/2:
 			motion.y = -JUMP_FORCE / 2
-			
+
 func move():
 	motion = move_and_slide(motion, Vector2.UP)
+
+func update_animations(input_vector):
+	if input_vector.x != 0:
+		sprite.scale.x = sign(input_vector.x)
+		spriteAnimator.play("Run")
+	else:
+		spriteAnimator.play("Idle")
+	
+	if not is_on_floor():
+		spriteAnimator.play("Jump")
