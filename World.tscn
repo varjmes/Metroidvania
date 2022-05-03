@@ -8,19 +8,31 @@
 [node name="Background" type="ColorRect" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
+margin_top = -4.0
+margin_bottom = -4.0
 color = Color( 0, 0, 0, 1 )
 
 [node name="Brick" parent="." instance=ExtResource( 1 )]
-position = Vector2( 48, 64 )
+position = Vector2( 6, 32 )
 
 [node name="Brick2" parent="." instance=ExtResource( 1 )]
-position = Vector2( 64, 64 )
+position = Vector2( 22, 32 )
 
 [node name="Brick3" parent="." instance=ExtResource( 1 )]
-position = Vector2( 80, 64 )
+position = Vector2( 38, 32 )
 
 [node name="Brick4" parent="." instance=ExtResource( 1 )]
-position = Vector2( 96, 64 )
+position = Vector2( 54, 32 )
 
 [node name="Player" parent="." instance=ExtResource( 2 )]
-position = Vector2( 80, 64 )
+position = Vector2( 19, 16 )
+
+[node name="CameraFollow" parent="Player" index="3"]
+remote_path = NodePath("../../Camera")
+
+[node name="Camera" type="Camera2D" parent="."]
+position = Vector2( 19, 8 )
+current = true
+smoothing_enabled = true
+
+[editable path="Player"]
