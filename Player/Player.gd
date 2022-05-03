@@ -1,6 +1,7 @@
 extends KinematicBody2D
 
 const DustEffect = preload("res://Effects/DustEffect.tscn")
+const PlayerBullet = preload("res://Player/PlayerBullet.tscn")
 
 export(int) var ACCELERATION = 512
 export(int) var MAX_SPEED = 64
@@ -8,8 +9,12 @@ export(float) var FRICTION = 0.25
 export(int) var GRAVITY = 200
 export(int) var JUMP_FORCE = 128
 export(int) var MAX_SLOPE_ANGLE = 46
+export(int) var BULLET_SPEED = 250
 
 onready var coyoteJumpTimer = $CoyoteJumpTimer
+onready var fireBulletTimer = $FireBulletTimer
+onready var gun = $Sprite/PlayerGun
+onready var muzzle = $Sprite/PlayerGun/Sprite/Muzzle
 onready var sprite = $Sprite
 onready var spriteAnimator = $SpriteAnimator
 
@@ -28,6 +33,9 @@ func _physics_process(delta):
 	apply_gravity(delta)
 	update_animations(input_vector)
 	move()
+	
+	if Input.is_action_pressed("fire") and fireBulletTimer.time_left == 0:
+		fire_bullet()
 
 func apply_friction(input_vector, friction):
 	if input_vector.x == 0 and is_on_floor():
@@ -47,9 +55,14 @@ func apply_horizontal_force(input_vector, delta):
 func create_dust_effect():
 	var dust_position = global_position
 	dust_position.x += rand_range(-4, 4)
-	var dustEffect = DustEffect.instance()
-	get_tree().current_scene.add_child(dustEffect)
-	dustEffect.global_position = dust_position
+	Utils.instance_scene_on_main(DustEffect, dust_position)
+
+func fire_bullet():
+	var bullet = Utils.instance_scene_on_main(PlayerBullet, muzzle.global_position)
+	bullet.velocity = Vector2.RIGHT.rotated(gun.rotation) * BULLET_SPEED
+	bullet.velocity.x *= sprite.scale.x
+	bullet.rotation = bullet.velocity.angle()
+	fireBulletTimer.start()
 
 func get_input_vector():
 	var input_vector = Vector2.ZERO
@@ -90,10 +103,12 @@ func move():
 		coyoteJumpTimer.start()
 
 func update_animations(input_vector):
+	sprite.scale.x = sign(get_local_mouse_position().x)
 	if input_vector.x != 0:
-		sprite.scale.x = sign(input_vector.x)
 		spriteAnimator.play("Run")
+		spriteAnimator.playback_speed = input_vector.x * sprite.scale.x
 	else:
+		spriteAnimator.playback_speed = 1
 		spriteAnimator.play("Idle")
 	
 	if not is_on_floor():
